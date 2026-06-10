@@ -23,6 +23,7 @@ python3 <prompt-architect 实际目录>/scripts/render_result.py <result.json> d
 ```json
 {
   "kind": "text | image | video",
+  "lang": "zh(默认) | en——en 时整页 UI（节标题/按钮/重发话术）切英文，供英文用户交付",
   "title": "周报生成器 / 商品白底主图 / 带货短视频 …",
   "raw_request": "用户原话",
   "images": ["/abs/path/参考图.jpg"],
