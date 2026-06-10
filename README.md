@@ -127,26 +127,42 @@ cd /path/to/your-project
 
 7 个 skill 组成一条流水线，**只有 `prompt-architect` 是入口**，其余都是它的内部工序（不要直接喊它们的名字）：
 
+入口先判定**你要的最终产物**是文字 prompt、一张图、还是一段视频（不是要你先提供图/视频），然后走对应的线。下面按三条线分别看。
+
+**线 1 · 文字 prompt（最常用）**：
+
 ```mermaid
-%%{init: {"flowchart": {"nodeSpacing": 28, "rankSpacing": 36}}}%%
-flowchart TD
-    A["用户一句话需求"] --> B{"prompt-architect 入口<br/>判定你要的最终产物是什么"}
-    B -->|要生成图片| I["pa-image<br/>图像编译器（按厂商适配）"]
-    B -->|要生成视频| V["pa-video<br/>视频编译器（分镜/音频/制式）"]
-    B -->|要文字 prompt / LLM 指令| C["pa-deconstruct 意图挖掘<br/>产出 IR：体裁/风格/成功判据/输出契约"]
-    C -.主体/用途不明时，图像视频也先来这里补 IR.-> I
-    C -.-> V
-    C --> D["pa-optimize 编译<br/>按体裁选骨架 · 默认 3 候选×不同策略"]
-    D --> E{"输出给谁用？"}
-    E -->|人读| F["pa-eval 判别器<br/>rubric 打分 · 成对比较选优 · 停机信号"]
-    E -->|程序解析| G["pa-precise-retrieval 输出强制<br/>schema/约束解码/校验-重问"] --> F
-    I --> F
-    V --> F
-    F --> H["HTML 结果页<br/>多方案对比 · 复制即用 · 检查清单 · 一键重发"]
-    F -.不达标，失败原因喂回.-> D
+flowchart LR
+    A["你的一句话需求"] --> B["prompt-architect<br/>入口：围栏防注入<br/>判产物 · 路由"]
+    B --> C["pa-deconstruct<br/>挖意图：缺啥问啥<br/>产出意图档案 IR"]
+    C --> D["pa-optimize<br/>按体裁选骨架<br/>写 3 个候选方案"]
+    D -->|输出给人读| E["pa-eval<br/>评分 + 两两比较<br/>选出最优"]
+    D -->|输出喂程序| G["pa-precise-retrieval<br/>上强制：schema /<br/>校验-重问"] --> E
+    E --> H["HTML 结果页"]
 ```
 
-> 读图说明：入口分支上的"要生成图片/视频"指的是**你想要的最终产物**，不是要你先提供一张图——图像/视频有各自的专用编译器，所以最先判产物模态，能直达就不绕文字管线；只有当主体/用途说不清时，才先走一趟意图挖掘补全信息（虚线）。入口节点本身做三件事：把你的原话**围栏成数据**（防 prompt 注入）、复杂度筛查（太简单就直接内联改写）、按"模态→状态→消费者"三段路由。
+**线 2 · 图像 / 视频 prompt**（结构相同，编译器不同；主体/用途说不清时，会先借线 1 的 pa-deconstruct 补问几句再进编译器）：
+
+```mermaid
+flowchart LR
+    A["你的一句话需求"] --> B["prompt-architect<br/>入口"]
+    B -->|要生成图片| I["pa-image<br/>10 要素 + 选厂商<br/>纯创意时出 3 变体"]
+    B -->|要生成视频| V["pa-video<br/>分镜/音频/一致性<br/>风格敏感时出 2 候选"]
+    I --> E["pa-eval<br/>评分排序"]
+    V --> E
+    E --> H["HTML 结果页"]
+```
+
+**线 3 · 不达标怎么办（迭代闭环，自动发生）**：
+
+```mermaid
+flowchart LR
+    E["pa-eval 打分"] -->|达标| H["交付结果页"]
+    E -->|不达标| F["失败原因写回 IR<br/>（哪条判据没过）"]
+    F --> R["pa-optimize 迭代模式<br/>critic 诊断 → rewriter<br/>只做最小修改"]
+    R --> E
+    E -->|连续 2 轮没进步| S["停机：回头重新挖意图<br/>而不是继续改字"]
+```
 
 | skill | 职责一句话 |
 |---|---|
