@@ -13,7 +13,7 @@ else
   DST="$HOME/.claude/skills"
 fi
 
-PA_SKILLS=(prompt-architect pa-deconstruct pa-optimize pa-precise-retrieval pa-eval pa-image pa-video)
+PA_SKILLS=(prompt-architect pa-deconstruct pa-optimize pa-precise-retrieval pa-eval pa-image pa-video pa-coding)
 
 mkdir -p "$DST"
 for d in "${PA_SKILLS[@]}"; do

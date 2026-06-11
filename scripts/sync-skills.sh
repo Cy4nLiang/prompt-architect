@@ -13,7 +13,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SRC="$ROOT/skills"
-PA_SKILLS=(prompt-architect pa-deconstruct pa-optimize pa-precise-retrieval pa-eval pa-image pa-video)
+PA_SKILLS=(prompt-architect pa-deconstruct pa-optimize pa-precise-retrieval pa-eval pa-image pa-video pa-coding)
 
 DESTS=("$ROOT/.claude/skills")
 [[ -d "$ROOT/.agents/skills" ]] && DESTS+=("$ROOT/.agents/skills")

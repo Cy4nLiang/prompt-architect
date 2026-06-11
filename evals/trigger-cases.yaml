@@ -52,8 +52,8 @@ cases:
     utterance: "优化我项目里 agent 的 system prompt（prompts.py）"
     expected_trigger: prompt-architect
     expected_pipeline: [pa-deconstruct, pa-optimize, pa-eval]
-    must_not_trigger: [workflow-code-generation]
-    review_before: "被生态抢走：workflow-code-generation 的'统一入口必须首先调用'吃掉"
+    must_not_trigger: [workflow-code-generation, pa-coding]
+    review_before: "被生态抢走：workflow-code-generation 的'统一入口必须首先调用'吃掉；三期起 pa-coding 也不得抢——这是 prompt 字符串优化，不是开发任务"
 
   - id: 7
     utterance: "给我做一个 prompt 调优的对比报告"
@@ -98,3 +98,27 @@ cases:
     expected_pipeline: [pa-deconstruct, pa-optimize, pa-eval]   # genre=creative → Voice 卡骨架 + 3 候选
     must_not_trigger: [pa-optimize, bp-html-artifacts]
     review_before: "新增（二期）：反同质化代表用例——creative 体裁不得套五段式"
+
+  # ---- 三期（pa-coding 上线）新增 ----
+  - id: 13
+    utterance: "帮我把这个需求整理成最佳 prompt 再开工：给登录接口加限流"
+    expected_trigger: pa-coding   # coding 专线唯一允许直接触发的子 skill
+    acceptable: [prompt-architect]   # 入口路由也能转入 pa-coding，不算失败
+    expected_pipeline: [pa-coding]
+    must_not_trigger: [pa-optimize, pa-deconstruct]
+    review_before: "新增（三期）：coding 专线直接触发主用例"
+
+  - id: 14
+    utterance: "帮我修复登录超时的 bug"
+    expected_trigger: none   # 日常开发请求——直接动手做，不进 pa 套件
+    expected_pipeline: []
+    must_not_trigger: [pa-coding, prompt-architect]
+    review_before: "新增（三期）：pa-coding 的负向边界——没说'先整理 prompt'就不得抢日常编码请求"
+
+  - id: 15
+    utterance: "先咨询我几个问题，然后生成一个让 Claude Code 开发用户导出功能的 prompt"
+    expected_trigger: pa-coding
+    acceptable: [prompt-architect]
+    expected_pipeline: [pa-coding]
+    must_not_trigger: [pa-deconstruct]
+    review_before: "新增（三期）：咨询式表述应命中 coding 专线而非通用解构"

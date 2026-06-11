@@ -8,7 +8,7 @@
 
 You say one vague sentence. The suite **mines your real intent** into a typed IR, compiles a **genre-aware** structured prompt (6 structurally different skeletons — no one-size-fits-all), generates **3 candidates** scored head-to-head by an **LLM judge**, and ships an **interactive HTML report** you can review, copy from, and iterate on.
 
-Covers **text prompts** (copywriting / chatbots / extraction / agent system prompts), **image prompts** (Midjourney, Seedream, gpt-image, SD/Flux…) and **video prompts** (Seedance, Sora, Kling, Veo, Runway…).
+Covers **text prompts** (copywriting / chatbots / extraction / agent system prompts), **image prompts** (Midjourney, Seedream, gpt-image, SD/Flux…) and **video prompts** (Seedance, Sora, Kling, Veo, Runway…) — plus a **coding lane** (`pa-coding`, the one directly-callable sub-skill): it auto-scans your repo, interviews you about a dev task, compiles the optimal task brief, and on your confirmation executes it right in the current Claude Code session.
 
 > **Core idea** (distilled from source-level analysis of 20 top prompt-engineering frameworks):
 > a prompt is not prose you write — it is an artifact **compiled from a typed I/O contract**. Humans own the intent; the loop owns the wording.
@@ -92,8 +92,8 @@ If this is your first Claude Code skill, five things worth knowing:
 
 1. **A skill is just a folder of instructions.** No binaries, no background processes. Claude Code reads `SKILL.md` files under `.claude/skills/` and follows them when your request matches. This suite makes **no network calls and collects no telemetry** — everything runs inside your Claude session.
 2. **You talk normally — skills trigger on intent.** Say *"rewrite this prompt so the model returns valid JSON"* and the suite picks it up. No slash commands to memorize. If it doesn't trigger, just be explicit: *"use prompt-architect to optimize: …"*.
-3. **Restart Claude Code after installing.** Skills are loaded at session start. To verify the install: `ls .claude/skills` in your project should show 7 `pa-*` / `prompt-architect` folders.
-4. **Only talk to the entry skill.** `prompt-architect` is the single entry point; the 6 `pa-*` sub-skills are its internal pipeline stages. Calling them directly skips the injection-fencing and intent-mining steps — which is exactly how you get generic, homogenized output.
+3. **Restart Claude Code after installing.** Skills are loaded at session start. To verify the install: `ls .claude/skills` in your project should show 8 `pa-*` / `prompt-architect` folders.
+4. **Only talk to the entry skill** (one exception). `prompt-architect` is the single entry point; the `pa-*` sub-skills are its internal pipeline stages. Calling them directly skips the injection-fencing and intent-mining steps — which is exactly how you get generic, homogenized output. The one exception is `pa-coding`: the coding lane is designed for direct invocation ("turn this dev task into an optimal prompt, then start").
 5. **Expect a short interview, and a few more tokens.** The pipeline asks up to 3 clarifying questions before writing anything, and runs multiple stages (mine → compile ×3 candidates → judge). It costs more tokens than a bare "improve my prompt" — that's the price of output you don't have to redo.
 
 ## Installation
@@ -125,6 +125,7 @@ Write me a prompt from scratch that makes the AI generate weekly reports
 This prompt keeps returning broken JSON — fix it
 Write a product-photo prompt — which image model should I use?
 Write a prompt for a 10-second product ad video
+Turn this dev task into an optimal prompt, then start: add rate limiting to the login API
 ```
 
 What happens next:
@@ -136,7 +137,7 @@ What happens next:
 
 ## How It Works
 
-7 skills form one pipeline. Only `prompt-architect` is the entry; everything else is an internal stage:
+8 skills form one pipeline. Only `prompt-architect` is the entry; everything else is an internal stage (with one directly-callable exception: `pa-coding`):
 
 **Line 1 · Text prompts (most common)**
 
@@ -173,6 +174,17 @@ flowchart LR
     E -->|2 rounds, no progress| S["halt: go re-mine the intent<br/>instead of polishing words"]
 ```
 
+**Line 4 · Coding lane (`pa-coding`, directly callable — lightweight, ends in execution, not a report)**
+
+```mermaid
+flowchart LR
+    A["your dev task"] --> P["pa-coding<br/>auto-scan repo<br/>+ short interview"]
+    P --> B["task brief<br/>(goal / acceptance /<br/>scope / verification)"]
+    B --> C{"confirm?"}
+    C -->|yes| X["executes in this<br/>Claude Code session"]
+    C -->|tweak| P
+```
+
 | skill | one-line job |
 |---|---|
 | **prompt-architect** | Sole entry: fences your raw text as data (anti-injection), gauges complexity, routes |
@@ -182,6 +194,7 @@ flowchart LR
 | pa-precise-retrieval | Enforcement: when output feeds a program, tightens to schema / constrained decoding / validate-reask |
 | pa-image | Image compiler: subject/composition/lighting/fidelity, vendor-specific negative & aspect syntax |
 | pa-video | Video compiler: duration budget, shot list, audio/dialogue, cross-shot consistency, vendor formats |
+| pa-coding | Coding lane (directly callable): auto-scans the repo, interviews you for acceptance criteria & scope, compiles a task brief, executes it on confirmation |
 
 ## Six Genre Templates — Why Outputs Don't All Look the Same
 
@@ -213,10 +226,10 @@ Every run ends with a self-contained HTML page (zero-dependency renderer, [`rend
 ## FAQ
 
 **Can I call `pa-optimize` directly?**
-No — and you don't need to. Sub-skills are internal stages; bypassing the entry skips injection fencing and intent mining, which is precisely what produces generic output. Just state your need.
+No — and you don't need to. Sub-skills are internal stages; bypassing the entry skips injection fencing and intent mining, which is precisely what produces generic output. Just state your need. (`pa-coding` is the one exception — the coding lane is built for direct invocation.)
 
 **How do I know the skills are installed?**
-`ls .claude/skills` in your project → you should see `prompt-architect` plus six `pa-*` folders. Then restart Claude Code and ask naturally.
+`ls .claude/skills` in your project → you should see `prompt-architect` plus seven `pa-*` folders. Then restart Claude Code and ask naturally.
 
 **What are the `{{placeholders}}` in results?**
 Information you never provided (brand name, coupon caps…). The suite refuses to fabricate — swap them with real values before use. They also make the prompt reusable as a template.
